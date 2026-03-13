@@ -98,10 +98,14 @@ def process_data_streaming(file_path, n_workers=4, chunk_size=50):
         with mp.Pool(n_workers) as pool:
             for start in tqdm(chunks, desc="Processing galaxies", unit="chunk"):
                 chunk_keys = all_keys[start : start + chunk_size]
-                chunk = [
-                    (CID, hf[CID]["sfh_samps"][:], hf[CID]["lookback_times_gyr"][:])
-                    for CID in chunk_keys
-                ]
+                chunk = []
+                for CID in chunk_keys:
+                    try:
+                        chunk.append((CID, hf[CID]["sfh_samps"][:], hf[CID]["lookback_times_gyr"][:]))
+                    except KeyError as e:
+                        print(f"  Skipping {CID}: missing dataset {e}")
+                if not chunk:
+                    continue
                 results = pool.map(_streaming_worker, chunk)
                 for CID, sn_samps in results:
                     list_of_CIDs.append(CID)
