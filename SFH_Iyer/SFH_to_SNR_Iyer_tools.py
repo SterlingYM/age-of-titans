@@ -75,6 +75,10 @@ def process_data(data):
     list_of_CIDs, list_of_SN_samps = zip(*results)
     return list_of_CIDs, np.array(list_of_SN_samps)
 
+def _streaming_worker(args):
+    CID, sfh_samps, lookback_times = args
+    return CID, helper(sfh_samps, lookback_times)
+
 def process_data_streaming(file_path, n_workers=4, chunk_size=50):
     """Process HDF5 data in chunks to avoid loading the full file into RAM.
 
@@ -82,10 +86,6 @@ def process_data_streaming(file_path, n_workers=4, chunk_size=50):
     and accumulates results — keeping only one chunk in memory at once.
     """
     import multiprocessing as mp
-
-    def _worker(args):
-        CID, sfh_samps, lookback_times = args
-        return CID, helper(sfh_samps, lookback_times)
 
     list_of_CIDs = []
     list_of_SN_samps = []
@@ -102,7 +102,7 @@ def process_data_streaming(file_path, n_workers=4, chunk_size=50):
                     (CID, hf[CID]["sfh_samps"][:], hf[CID]["lookback_times_gyr"][:])
                     for CID in chunk_keys
                 ]
-                results = pool.map(_worker, chunk)
+                results = pool.map(_streaming_worker, chunk)
                 for CID, sn_samps in results:
                     list_of_CIDs.append(CID)
                     list_of_SN_samps.append(sn_samps)
