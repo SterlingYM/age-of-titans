@@ -45,7 +45,7 @@ def helper(sfh_samples, lookback_times):
     ''' turn a list of SFHs into a list of SN age samples.
     '''
     sampled_ages = []
-    for i in np.random.choice(len(sfh_samples), size=1000, replace=False):
+    for i in np.random.choice(len(sfh_samples), size=1000, replace=True):
         sfh = sfh_samples[i]
         time_grid_Gyr = np.arange(0.04, 14, 0.01)
         SN_age_pdf = SFH_to_SN_age_PDF(sfh, lookback_times, time_grid_Gyr=time_grid_Gyr)
