@@ -79,20 +79,33 @@ def _streaming_worker(args):
     CID, sfh_samps, lookback_times = args
     return CID, helper(sfh_samps, lookback_times)
 
-def process_data_streaming(file_path, n_workers=4, chunk_size=50):
+def process_data_streaming(file_path, n_workers=4, chunk_size=50, output_path=None):
     """Process HDF5 data in chunks to avoid loading the full file into RAM.
 
     Reads `chunk_size` galaxies at a time, processes each chunk with a pool,
     and accumulates results — keeping only one chunk in memory at once.
+
+    If `output_path` is given, results are saved incrementally to an HDF5 file
+    after each chunk. Any CIDs already present in that file are skipped, so the
+    run can be resumed after an interruption.
     """
     import multiprocessing as mp
+
+    # Load already-processed CIDs from a previous (partial) run.
+    completed_CIDs = set()
+    if output_path is not None:
+        import os
+        if os.path.exists(output_path):
+            with h5py.File(output_path, "r") as out_hf:
+                completed_CIDs = set(out_hf.keys())
+            print(f"Resuming: {len(completed_CIDs)} CIDs already processed.")
 
     list_of_CIDs = []
     list_of_SN_samps = []
 
     with h5py.File(file_path, "r") as hf:
-        all_keys = list(hf.keys())
-        print(f"Total galaxies: {len(all_keys)}")
+        all_keys = [k for k in hf.keys() if k not in completed_CIDs]
+        print(f"Galaxies to process: {len(all_keys)}")
 
         chunks = range(0, len(all_keys), chunk_size)
         with mp.Pool(n_workers) as pool:
@@ -107,6 +120,12 @@ def process_data_streaming(file_path, n_workers=4, chunk_size=50):
                 if not chunk:
                     continue
                 results = pool.map(_streaming_worker, chunk)
+
+                if output_path is not None:
+                    with h5py.File(output_path, "a") as out_hf:
+                        for CID, sn_samps in results:
+                            out_hf.create_dataset(CID, data=sn_samps)
+
                 for CID, sn_samps in results:
                     list_of_CIDs.append(CID)
                     list_of_SN_samps.append(sn_samps)
