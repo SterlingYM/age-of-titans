@@ -125,6 +125,7 @@ def process_data_streaming(file_path, n_workers=4, chunk_size=50, output_path=No
                     with h5py.File(output_path, "a") as out_hf:
                         for CID, sn_samps in results:
                             out_hf.create_dataset(CID, data=sn_samps)
+                        out_hf.flush()
 
                 for CID, sn_samps in results:
                     list_of_CIDs.append(CID)
