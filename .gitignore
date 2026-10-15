@@ -212,3 +212,11 @@ __marimo__/
 # macOS
 .DS_Store
 **/.DS_Store
+
+# large / non-code
+*.h5
+draft/
+.claude/
+SFH_Iyer/GalaxyZoo1_DR_table2.csv
+.DS_Store
+.ipynb_checkpoints/
