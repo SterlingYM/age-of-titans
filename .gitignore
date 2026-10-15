@@ -220,3 +220,7 @@ draft/
 SFH_Iyer/GalaxyZoo1_DR_table2.csv
 .DS_Store
 .ipynb_checkpoints/
+data/ages/
+logs/
+results/
+old_untracked/
