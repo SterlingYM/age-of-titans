@@ -7,13 +7,15 @@ from p_tqdm import p_umap
 from tqdm import tqdm
 import pandas as pd
 
+MIN_CUTOFF_TIME = 0.30  # Gyr
+DTD_SLOPE = -1.13
 
 def DTD(t_Gyr,R1,alpha):
     return R1 * (t_Gyr)**alpha
 
 def SFH_to_SN_age_PDF(sfh, lookback_times, 
-              R1=1.0, alpha=-1.07, 
-              time_grid_Gyr=np.arange(0.04, 14, 0.01),
+              R1=1.0, alpha=DTD_SLOPE, 
+              time_grid_Gyr=np.arange(MIN_CUTOFF_TIME, 14, 0.01),
               normalize=True):
     ''' grab an SFH and convert it to an SN age PDF using DTD.
     '''
@@ -47,7 +49,7 @@ def helper(sfh_samples, lookback_times):
     sampled_ages = []
     for i in np.random.choice(len(sfh_samples), size=1000, replace=True):
         sfh = sfh_samples[i]
-        time_grid_Gyr = np.arange(0.04, 14, 0.01)
+        time_grid_Gyr = np.arange(MIN_CUTOFF_TIME, 14, 0.01)
         SN_age_pdf = SFH_to_SN_age_PDF(sfh, lookback_times, time_grid_Gyr=time_grid_Gyr)
         sampled_ages.append(sample_from_PDF(time_grid_Gyr, SN_age_pdf))
     return np.array(sampled_ages)
@@ -125,7 +127,6 @@ def process_data_streaming(file_path, n_workers=4, chunk_size=50, output_path=No
                     with h5py.File(output_path, "a") as out_hf:
                         for CID, sn_samps in results:
                             out_hf.create_dataset(CID, data=sn_samps)
-                        out_hf.flush()
 
                 for CID, sn_samps in results:
                     list_of_CIDs.append(CID)
